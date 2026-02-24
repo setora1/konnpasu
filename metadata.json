@@ -1,0 +1,5 @@
+{
+  "name": "コンパス風 大会集計ツール",
+  "description": "3対3陣取りバトルゲームの大会結果を記録・集計するツールです。",
+  "requestFramePermissions": []
+}
