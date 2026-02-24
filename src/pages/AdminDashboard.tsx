@@ -21,6 +21,12 @@ export function AdminDashboard() {
     setSearchParams({ tab: activeTab }, { replace: true });
   }, [activeTab, setSearchParams]);
 
+  useEffect(() => {
+    if (id) {
+      useStore.getState().joinRoom(id);
+    }
+  }, [id]);
+
   const tournament = id ? tournaments[id] : null;
 
   if (!tournament) {

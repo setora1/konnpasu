@@ -10,6 +10,12 @@ export function MatchInput() {
   const navigate = useNavigate();
   const { tournaments, updateMatch, currentUserRole } = useStore();
 
+  useEffect(() => {
+    if (tournamentId) {
+      useStore.getState().joinRoom(tournamentId);
+    }
+  }, [tournamentId]);
+
   const tournament = tournamentId ? tournaments[tournamentId] : null;
   const match = tournament?.matches.find(m => m.id === matchId);
 

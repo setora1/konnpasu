@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { Bracket } from '../components/Bracket';
@@ -8,6 +8,12 @@ export function TournamentView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tournaments, currentUserRole, logout } = useStore();
+
+  useEffect(() => {
+    if (id) {
+      useStore.getState().joinRoom(id);
+    }
+  }, [id]);
 
   const tournament = id ? tournaments[id] : null;
 

@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { io } from 'socket.io-client';
+
+export const socket = io();
 
 export type Role = 'admin' | 'player' | 'spectator' | null;
 export type Portal = 'A' | 'B' | 'C' | 'D' | 'E';
@@ -46,8 +48,9 @@ interface AppState {
   updateTournament: (id: string, updates: Partial<Tournament>) => void;
   updateMatch: (tournamentId: string, matchId: string, updates: Partial<Match>) => void;
   generateBracket: (tournamentId: string, teams: string[]) => void;
-  login: (code: string, role: Role) => boolean;
+  login: (code: string, role: Role) => Promise<boolean>;
   logout: () => void;
+  joinRoom: (id: string) => void;
 }
 
 const generateId = () => {
@@ -106,96 +109,121 @@ export const createBracketMatches = (teams: string[]): Match[] => {
   return matches;
 };
 
-export const useStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      tournaments: {},
-      currentUserRole: null,
-      currentTournamentId: null,
+export const useStore = create<AppState>((set, get) => {
+  socket.on('tournament_state', (tournament: Tournament) => {
+    set((state) => ({
+      tournaments: {
+        ...state.tournaments,
+        [tournament.id]: tournament
+      }
+    }));
+  });
 
-      createTournament: (name, settings, teams) => {
-        let id = generateId();
-        while (get().tournaments[id]) {
-          id = generateId();
-        }
-        const matches: Match[] = [];
-        set((state) => ({
-          tournaments: {
-            ...state.tournaments,
-            [id]: { id, name, settings, teams, matches },
-          },
-          currentUserRole: 'admin',
-          currentTournamentId: id,
-        }));
-        return id;
-      },
+  return {
+    tournaments: {},
+    currentUserRole: null,
+    currentTournamentId: null,
 
-      updateSettings: (id, settings) => {
-        set((state) => ({
-          tournaments: {
-            ...state.tournaments,
-            [id]: { ...state.tournaments[id], settings },
-          },
-        }));
-      },
+    joinRoom: (id) => {
+      socket.emit('join_tournament', id);
+    },
 
-      updateTournament: (id, updates) => {
-        set((state) => ({
-          tournaments: {
-            ...state.tournaments,
-            [id]: { ...state.tournaments[id], ...updates },
-          },
-        }));
-      },
+    createTournament: (name, settings, teams) => {
+      let id = generateId();
+      // In a real app, we'd check server-side for collision, but this is okay for prototype
+      const matches: Match[] = [];
+      const tournament: Tournament = { id, name, settings, teams, matches };
+      
+      socket.emit('create_tournament', tournament);
+      socket.emit('join_tournament', id);
 
-      updateMatch: (tournamentId, matchId, updates) => {
-        set((state) => {
-          const tournament = state.tournaments[tournamentId];
-          if (!tournament) return state;
+      set((state) => ({
+        tournaments: {
+          ...state.tournaments,
+          [id]: tournament,
+        },
+        currentUserRole: 'admin',
+        currentTournamentId: id,
+      }));
+      return id;
+    },
 
-          const updatedMatches = tournament.matches.map((m) =>
-            m.id === matchId ? { ...m, ...updates } : m
-          );
+    updateSettings: (id, settings) => {
+      set((state) => {
+        const t = state.tournaments[id];
+        if (!t) return state;
+        const updated = { ...t, settings };
+        socket.emit('update_tournament', id, updated);
+        return {
+          tournaments: { ...state.tournaments, [id]: updated },
+        };
+      });
+    },
 
-          return {
-            tournaments: {
-              ...state.tournaments,
-              [tournamentId]: { ...tournament, matches: updatedMatches },
-            },
-          };
+    updateTournament: (id, updates) => {
+      set((state) => {
+        const t = state.tournaments[id];
+        if (!t) return state;
+        const updated = { ...t, ...updates };
+        socket.emit('update_tournament', id, updated);
+        return {
+          tournaments: { ...state.tournaments, [id]: updated },
+        };
+      });
+    },
+
+    updateMatch: (tournamentId, matchId, updates) => {
+      set((state) => {
+        const tournament = state.tournaments[tournamentId];
+        if (!tournament) return state;
+
+        const updatedMatches = tournament.matches.map((m) =>
+          m.id === matchId ? { ...m, ...updates } : m
+        );
+        const updated = { ...tournament, matches: updatedMatches };
+        socket.emit('update_tournament', tournamentId, updated);
+
+        return {
+          tournaments: { ...state.tournaments, [tournamentId]: updated },
+        };
+      });
+    },
+
+    generateBracket: (tournamentId, teams) => {
+      set((state) => {
+        const tournament = state.tournaments[tournamentId];
+        if (!tournament) return state;
+        
+        const matches = createBracketMatches(teams);
+        const updated = { ...tournament, teams, matches };
+        socket.emit('update_tournament', tournamentId, updated);
+
+        return {
+          tournaments: { ...state.tournaments, [tournamentId]: updated },
+        };
+      });
+    },
+
+    login: async (code, role) => {
+      return new Promise((resolve) => {
+        socket.emit('check_tournament', code, (exists: boolean) => {
+          if (exists || role === 'admin') {
+            set({ currentTournamentId: code, currentUserRole: role });
+            socket.emit('join_tournament', code);
+            resolve(true);
+          } else {
+            resolve(false);
+          }
         });
-      },
+      });
+    },
 
-      generateBracket: (tournamentId, teams) => {
-        set((state) => {
-          const tournament = state.tournaments[tournamentId];
-          if (!tournament) return state;
-          
-          const matches = createBracketMatches(teams);
-          return {
-            tournaments: {
-              ...state.tournaments,
-              [tournamentId]: { ...tournament, teams, matches },
-            },
-          };
-        });
-      },
-
-      login: (code, role) => {
-        const tournament = get().tournaments[code];
-        if (tournament || role === 'admin') {
-          set({ currentTournamentId: code, currentUserRole: role });
-          return true;
-        }
-        return false;
-      },
-
-      logout: () => {
-        set({ currentTournamentId: null, currentUserRole: null });
-      },
-    }),
-    {
-      name: 'compass-tournament-storage',
-    }
-  )
-);
+    logout: () => {
+      const { currentTournamentId } = get();
+      if (currentTournamentId) {
+        socket.emit('leave_tournament', currentTournamentId);
+      }
+      set({ currentTournamentId: null, currentUserRole: null });
+    },
+  };
+});

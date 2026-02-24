@@ -10,13 +10,14 @@ export function Home() {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
 
-  const handleJoin = (role: 'player' | 'spectator') => {
+  const handleJoin = async (role: 'player' | 'spectator') => {
     if (code.length !== 6) {
       setError('6桁の大会IDを入力してください');
       return;
     }
     
-    if (login(code, role)) {
+    const success = await login(code, role);
+    if (success) {
       navigate(`/tournament/${code}`);
     } else {
       setError('大会が見つかりませんでした');
