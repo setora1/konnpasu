@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { TournamentView } from './pages/TournamentView';
@@ -21,7 +21,7 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode,
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route 
@@ -35,6 +35,6 @@ export default function App() {
         <Route path="/tournament/:id" element={<TournamentView />} />
         <Route path="/match/:tournamentId/:matchId" element={<MatchInput />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
