@@ -9,7 +9,7 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 // In-memory state
 const tournaments: Record<string, any> = {};
