@@ -103,7 +103,7 @@ export function Numpad({ code, setCode }: NumpadProps) {
           <button
             key={num}
             onClick={() => handlePress(num.toString())}
-            className="h-14 sm:h-16 bg-white border-2 border-gray-200 rounded-xl text-2xl font-black text-gray-800 shadow-[0_4px_0_rgb(229,231,235)] active:shadow-[0_0px_0_rgb(229,231,235)] active:translate-y-1 transition-all"
+            className="h-14 sm:h-16 bg-white border-2 border-gray-200 rounded-xl text-2xl font-black text-gray-800 shadow-[0_4px_0_rgb(229,231,235)] active:shadow-[0_0px_0_rgb(229,231,235)] active:translate-y-1 transition-all touch-manipulation"
           >
             {num}
           </button>
@@ -111,7 +111,7 @@ export function Numpad({ code, setCode }: NumpadProps) {
         <div className="col-span-2">
           <button
             onClick={handleClear}
-            className="w-full h-14 sm:h-16 bg-gray-100 border-2 border-gray-200 rounded-xl flex items-center justify-center text-lg font-black text-gray-600 shadow-[0_4px_0_rgb(229,231,235)] active:shadow-[0_0px_0_rgb(229,231,235)] active:translate-y-1 transition-all"
+            className="w-full h-14 sm:h-16 bg-gray-100 border-2 border-gray-200 rounded-xl flex items-center justify-center text-lg font-black text-gray-600 shadow-[0_4px_0_rgb(229,231,235)] active:shadow-[0_0px_0_rgb(229,231,235)] active:translate-y-1 transition-all touch-manipulation"
           >
             IDクリア
           </button>
@@ -119,7 +119,7 @@ export function Numpad({ code, setCode }: NumpadProps) {
         <div className="col-start-3">
           <button
             onClick={() => handlePress('0')}
-            className="w-full h-14 sm:h-16 bg-white border-2 border-gray-200 rounded-xl text-2xl font-black text-gray-800 shadow-[0_4px_0_rgb(229,231,235)] active:shadow-[0_0px_0_rgb(229,231,235)] active:translate-y-1 transition-all"
+            className="w-full h-14 sm:h-16 bg-white border-2 border-gray-200 rounded-xl text-2xl font-black text-gray-800 shadow-[0_4px_0_rgb(229,231,235)] active:shadow-[0_0px_0_rgb(229,231,235)] active:translate-y-1 transition-all touch-manipulation"
           >
             0
           </button>
